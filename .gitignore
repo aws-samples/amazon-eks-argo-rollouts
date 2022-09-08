@@ -1,0 +1,12 @@
+*.tfstate*
+.terraform.lock.hcl
+.terraform
+.cache
+
+*__pycache__*
+
+demo
+kubernetes-extras
+venv
+
+*.log

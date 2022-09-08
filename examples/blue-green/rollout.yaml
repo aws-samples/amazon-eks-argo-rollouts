@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: demo-app-bg
+  namespace: app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-app-bg
+  template:
+    metadata:
+      labels:
+        app: demo-app-bg
+    spec:
+      containers:
+        - name: demo-app-bg-v1
+          image: 781005387614.dkr.ecr.ap-southeast-1.amazonaws.com/demo-app:bg-v1
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /version
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /version
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 20
+      serviceAccountName: app-envoy-proxies
+  strategy:
+    blueGreen:
+      activeService: my-bg-svc-active #green
+      previewService: my-bg-svc-preview #blue
+      ### Change to true for Analysis template
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 30
+      activeMetadata:
+        labels:
+          role: active
+      previewMetadata:
+        labels:
+          role: preview
+      # prePromotionAnalysis:
+      #   templates:
+      #     - templateName: pre-analysis
+      #   args:
+      #     - name: service-name
+      #       value: my-bg-svc-preview
