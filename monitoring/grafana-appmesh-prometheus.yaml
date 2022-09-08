@@ -1,0 +1,9 @@
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: AppMesh-Prometheus
+      type: prometheus
+      url: http://appmesh-prometheus.appmesh-system.svc.cluster.local:9090
+      access: proxy
+      isDefault: true

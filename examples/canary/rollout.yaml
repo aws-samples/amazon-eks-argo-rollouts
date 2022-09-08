@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: demo-app-canary
+  namespace: app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-app-canary
+  template:
+    metadata:
+      labels:
+        app: demo-app-canary
+    spec:
+      containers:
+        - name: demo-app
+          image: 372056251697.dkr.ecr.ap-southeast-1.amazonaws.com/demo-app:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+      serviceAccountName: app-envoy-proxies
+  strategy:
+    canary:
+      canaryService: my-svc-canary
+      stableService: my-svc-stable
+      trafficRouting:
+        appMesh:
+          virtualService: 
+            name: my-canary-vsvc
+          virtualNodeGroup:
+            canaryVirtualNodeRef:
+              name: my-vn-canary
+            stableVirtualNodeRef:
+              name: my-vn-stable
+      analysis:
+        templates:
+        - templateName: canary-success-rate
+        startingStep: 2
+        args:
+        - name: app
+          value: demo-app-canary
+        - name: canary-hash
+          valueFrom:
+            podTemplateHashValue: Latest
+      steps:
+      - setWeight: 25
+      - pause: {duration: 1m}
+      - setWeight: 50
+      - pause: {duration: 1m}
+      - setWeight: 75
+      - pause: {duration: 2m}

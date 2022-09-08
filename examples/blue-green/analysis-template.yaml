@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: pre-analysis
+  namespace: app
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: webmetric
+      initialDelay: 30s
+      failureLimit: 2
+      interval: 10s
+      count: 3
+      successCondition: result == "healthy"
+      provider:
+        web:
+          url: "http://{{ args.service-name }}:8080/sample_api"
+          jsonPath: "{$.status}"
+# apiVersion: argoproj.io/v1alpha1
+# kind: AnalysisTemplate
+# metadata:
+#   name: bluegreen-success-rate
+#   namespace: app
+# spec:
+#   args:
+#   - name: app
+#   - name: bluegreen-hash
+#   metrics:
+#   - name: success-rate
+#     interval: 20s
+#     successCondition: result[0] <= 0.95 #| len(result) == 0  # isNaN(result) cannot use []float64 as argument (type float64) to call isNaN
+#     failureLimit: 3
+#     provider:
+#       prometheus:
+#         address: http://appmesh-prometheus.appmesh-system:9090
+#         query: |
+#           sum(irate(
+#             envoy_cluster_upstream_rq_xx{app="{{args.app}}",envoy_response_code_class!~"5",rollouts_pod_template_hash="{{args.bluegreen-hash}}"}[2m]
+#           )) /
+#           sum(irate(
+#             envoy_cluster_upstream_rq_xx{app="{{args.app}}",rollouts_pod_template_hash="{{args.bluegreen-hash}}"}[2m]
+#           ))
+# ---
+
+# sum(irate(envoy_cluster_upstream_rq_xx{app="demo-app-bg",envoy_response_code_class!~"5",rollouts_pod_template_hash="6856ff65c9"}[1m]))

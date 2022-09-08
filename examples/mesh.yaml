@@ -1,0 +1,18 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: my-app-mesh
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: my-app-mesh
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app
+  labels:
+    mesh: my-app-mesh
+    gateway: ingress-gw
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
