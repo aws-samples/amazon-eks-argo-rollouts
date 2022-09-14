@@ -104,6 +104,12 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
 kubectl apply -f examples/mesh.yaml
 ```
 
+#### Create the virtual gateway expose the API endpoint outside the cluster
+
+```
+kubectl apply -f examples/virtual_gateway.yaml
+```
+
 #### Create an IAM Policy for Envoy proxy
 
 ```
@@ -155,28 +161,6 @@ datasources:
       isDefault: true
 ```
 
-```
-kubectl create namespace grafana
-```
-
-```
-helm install grafana grafana/grafana \
-    --namespace grafana \
-    --set persistence.storageClassName="gp2" \
-    --set persistence.enabled=true \
-    --set adminPassword='digidemo' \
-    --values grafana.yaml \
-    --set service.type=LoadBalancer
-```
-
-To access grafana:
-```
-export ELB=$(kubectl get svc -n grafana grafana -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-echo "http://$ELB"
-```
-
-Import the dashboard provided from dashboards/dashboard.json
-
 #### Setup Grafana
 
 Get Grafana password:
@@ -188,8 +172,7 @@ Launch Grafana UI:
 ```
 kubectl -n grafana port-forward svc/grafana 3000:80
 ```
-Login with the below credentials
-
+Login with the below credentials:
 ```
 Username: admin
 Password: Value from previous step
@@ -250,12 +233,6 @@ Create the App mesh logical constructs
 kubectl apply -f examples/blue-green/meshed_app.yaml
 ```
 
-Create the virtual gateway expose the API endpoint outside the cluster
-
-```
-kubectl apply -f examples/virtual_gateway.yaml
-```
-
 ### Canary Deployment
 
 
@@ -269,12 +246,6 @@ Create the App mesh logical constructs
 
 ```
 kubectl apply -f examples/canary/meshed_app.yaml
-```
-
-Create the virtual gateway expose the API endpoint outside the cluster
-
-```
-kubectl apply -f examples/virtual_gateway.yaml
 ```
 
 ---
