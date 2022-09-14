@@ -114,33 +114,6 @@ module "vpc" {
 }
 
 #---------------------------------------------------------------
-# Observability Resources
-#---------------------------------------------------------------
-
-# resource "grafana_data_source" "prometheus" {
-#   type       = "prometheus"
-#   name       = "amp"
-#   is_default = true
-#   url        = module.managed_prometheus.workspace_prometheus_endpoint
-
-#   json_data {
-#     http_method     = "GET"
-#     sigv4_auth      = true
-#     sigv4_auth_type = "workspace-iam-role"
-#     sigv4_region    = local.region
-#   }
-# }
-
-# resource "grafana_folder" "this" {
-#   title = "Observability"
-# }
-
-# resource "grafana_dashboard" "this" {
-#   folder      = grafana_folder.this.id
-#   config_json = file("${path.module}/dashboards/default.json")
-# }
-
-#---------------------------------------------------------------
 # ECR Resources
 #---------------------------------------------------------------
 

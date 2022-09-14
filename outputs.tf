@@ -53,8 +53,3 @@ output "region" {
   value       = local.region
   description = "AWS region"
 }
-
-# output "grafana_workspace_endpoint" {
-#   description = "The endpoint of the Grafana workspace."
-#   value       = module.managed_grafana.workspace_endpoint
-# }
