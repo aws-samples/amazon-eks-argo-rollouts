@@ -144,24 +144,9 @@ helm upgrade -i appmesh-prometheus eks/appmesh-prometheus \
 --set persistentVolumeClaim.claimName=prometheus
 ``` -->
 
-
-### Install Grafana
-
-```
-helm repo add grafana https://grafana.github.io/helm-charts
-cat << EoF > grafana.yaml
-datasources:
-  datasources.yaml:
-    apiVersion: 1
-    datasources:
-    - name: Prometheus
-      type: prometheus
-      url: http://prometheus-server.prometheus.svc.cluster.local
-      access: proxy
-      isDefault: true
-```
-
 #### Setup Grafana
+
+Grafana has been installed as part of the Terraform module, so we will need to get the password and import the dashboard.
 
 Get Grafana password:
 ```
