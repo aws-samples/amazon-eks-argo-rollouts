@@ -38,7 +38,7 @@ spec:
       activeService: my-bg-svc-active #green
       previewService: my-bg-svc-preview #blue
       ### Change to true for Analysis template
-      autoPromotionEnabled: false
+      autoPromotionEnabled: true
       scaleDownDelaySeconds: 30
       activeMetadata:
         labels:
@@ -46,9 +46,9 @@ spec:
       previewMetadata:
         labels:
           role: preview
-      # prePromotionAnalysis:
-      #   templates:
-      #     - templateName: pre-analysis
-      #   args:
-      #     - name: service-name
-      #       value: my-bg-svc-preview
+      prePromotionAnalysis:
+        templates:
+          - templateName: pre-analysis-template
+        args:
+          - name: service-name
+            value: my-bg-svc-preview

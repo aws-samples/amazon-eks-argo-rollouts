@@ -6,6 +6,8 @@ spec:
   namespaceSelector:
     matchLabels:
       mesh: my-app-mesh
+  egressFilter: 
+    type: ALLOW_ALL
 
 ---
 apiVersion: v1
