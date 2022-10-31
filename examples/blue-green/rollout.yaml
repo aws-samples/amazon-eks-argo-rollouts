@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: demo-app-bg-v1
-          image: 781005387614.dkr.ecr.ap-southeast-1.amazonaws.com/demo-app:bg-v1
+          image: REPLACE_ME.dkr.ecr.ap-southeast-1.amazonaws.com/demo-app:bg-v1
           imagePullPolicy: Always
           ports:
             - name: http

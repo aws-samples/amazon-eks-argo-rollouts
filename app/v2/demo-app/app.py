@@ -15,7 +15,7 @@ app.config["DEBUG"] = os.environ.get("DEBUG")
 
 @app.route("/")
 def home():
-    return "Hello ProServe! I am unhealthy!"
+    return "Hello, I am unhealthy!"
 
 
 @app.route("/version")
@@ -25,7 +25,7 @@ def version():
 
 @app.route("/sample_api")
 def sample_api():
-    if random() < 0.25:
+    if random() < 0:
         return jsonify(status="healthy", version=__version__)
     else:
         return (
