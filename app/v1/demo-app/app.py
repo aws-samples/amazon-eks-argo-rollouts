@@ -14,7 +14,7 @@ app.config["DEBUG"] = os.environ.get("DEBUG")
 
 @app.route("/")
 def home():
-    return "Hello AWS! I am healthy!"
+    return "Hello, I am healthy!"
 
 
 @app.route("/version")
