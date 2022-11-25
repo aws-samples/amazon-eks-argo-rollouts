@@ -27,7 +27,7 @@ spec:
       stableService: my-svc-stable
       trafficRouting:
         appMesh:
-          virtualService: 
+          virtualService:
             name: my-canary-vsvc
           virtualNodeGroup:
             canaryVirtualNodeRef:

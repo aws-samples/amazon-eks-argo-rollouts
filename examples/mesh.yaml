@@ -6,15 +6,5 @@ spec:
   namespaceSelector:
     matchLabels:
       mesh: my-app-mesh
-  egressFilter: 
+  egressFilter:
     type: ALLOW_ALL
-
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: app
-  labels:
-    mesh: my-app-mesh
-    gateway: ingress-gw
-    appmesh.k8s.aws/sidecarInjectorWebhook: enabled

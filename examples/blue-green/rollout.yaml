@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: demo-app-bg-v1
-          image: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo-app:v1.0.0
+          image: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo-app:v2.0.1
           imagePullPolicy: Always
           ports:
             - name: http
