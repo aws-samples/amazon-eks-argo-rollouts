@@ -10,3 +10,5 @@ kubernetes-extras
 venv
 
 *.log
+.envrc
+kube-config.yaml

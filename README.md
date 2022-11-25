@@ -4,7 +4,7 @@
 
 * An active AWS account.
 * AWS Command Line Interface (AWS CLI), installed and configured. For more information about this, see Installing, updating, and uninstalling the AWS CLI in the AWS CLI documentation.
-* Terraform installed on your local machine. For more information about this, see the Terraform documentation. 
+* Terraform installed on your local machine. For more information about this, see the Terraform documentation.
 * kubectl
 * eksctl
 * helm
@@ -42,23 +42,6 @@ kubectl apply -f examples/mesh.yaml
 ```
 kubectl apply -f examples/virtual_gateway.yaml
 ```
-
----
-### Install Appmesh Prometheus
-
-```
-helm repo add eks https://aws.github.io/eks-charts
-
-helm upgrade -i appmesh-prometheus eks/appmesh-prometheus \
---namespace appmesh-system
-```
-
-<!-- ```
-helm upgrade -i appmesh-prometheus eks/appmesh-prometheus \
---namespace appmesh-system \
---set retention=12h \
---set persistentVolumeClaim.claimName=prometheus
-``` -->
 
 #### Setup Grafana
 
@@ -122,18 +105,23 @@ docker push ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo-app:v2.0.1
 ---
 ### Blue/Green Deployment
 
-Create the rollout object
-
-```
-kubectl apply -f examples/blue-green/rollout.yaml
-```
-
 Create the App mesh logical constructs
 
 ```
 kubectl apply -f examples/blue-green/meshed_app.yaml
 ```
 
+Create the Analysis template
+
+```
+kubectl apply -f examples/blue-green/analysis-template.yaml
+```
+
+Create the rollout object
+
+```
+envsubst < examples/blue-green/rollout.yaml | kubectl apply -f -
+```
 ### Canary Deployment
 
 

@@ -12,7 +12,7 @@ spec:
   - name: success-rate
     interval: 20s
     successCondition: result[0] >= 0.90 || len(result) == 0 # isNaN(result) cannot use []float64 as argument (type float64) to call isNaN
-    failureLimit: 1 
+    failureLimit: 1
     provider:
       prometheus:
         address: http://appmesh-prometheus.appmesh-system:9090
