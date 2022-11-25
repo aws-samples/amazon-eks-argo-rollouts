@@ -22,40 +22,8 @@ terraform init
 terraform plan
 terraform apply -auto-approve
 ```
-### Install App Mesh Controller
 
-
-#### Add helm repo for App Mesh
-
-
-```
-helm repo add eks https://aws.github.io/eks-charts
-```
-
-#### Create a namespace
-
-
-```
-kubectl create ns appmesh-system
-```
-
-#### Install App Mesh CRDs
-
-```
-kubectl apply -k "https://github.com/aws/eks-charts/stable/appmesh-controller/crds?ref=master"
-```
-
-```
-kubectl apply -k "github.com/aws/eks-charts/stable/appmesh-controller//crds?ref=master"
-```
-
-#### Create your OIDC identity provider for the cluster
-
-
-
-`kubectl create ns appmesh-system`
-
-#### Set your local environment variables
+### Set your local environment variables
 
 ```
 export CLUSTER_NAME=eks-argo-rollouts
@@ -63,68 +31,16 @@ export AWS_REGION=ap-southeast-1
 export ACCOUNT_ID=REPLACE_ME
 ```
 
-#### Create your OIDC identity provider for the cluster
-
-
-```
-  eksctl utils associate-iam-oidc-provider \
-    --region=$AWS_REGION \
-    --cluster $CLUSTER_NAME \
-    --approve
-```
-
-#### Create an IAM role for the appmesh-controller service account
-
-Replace `$ACCOUNT_ID` with the AWS Account ID your cluster is running in.
-
-Create role and bind to appmesh-controller Kubernetes service account:
-
-```
-eksctl create iamserviceaccount \
-    --cluster $CLUSTER_NAME \
-    --namespace appmesh-system \
-    --name appmesh-controller \
-    --attach-policy-arn  arn:aws:iam::aws:policy/AWSCloudMapFullAccess,arn:aws:iam::aws:policy/AWSAppMeshFullAccess \
-    --override-existing-serviceaccounts \
-    --approve
-```
-#### Deploy app mesh controller
-
-```
-helm upgrade -i appmesh-controller eks/appmesh-controller \
-    --namespace appmesh-system \
-    --set region=$AWS_REGION \
-    --set serviceAccount.create=false \
-    --set serviceAccount.name=appmesh-controller
-```
-
-#### Create the App Mesh and namespace
+### Create the App Mesh and namespace
 
 ```
 kubectl apply -f examples/mesh.yaml
 ```
 
-#### Create the virtual gateway expose the API endpoint outside the cluster
+### Create the virtual gateway expose the API endpoint outside the cluster
 
 ```
 kubectl apply -f examples/virtual_gateway.yaml
-```
-
-#### Create an IAM Policy for Envoy proxy
-
-```
-aws iam create-policy \
-    --policy-name DevEnvoyNamespaceIAMPolicy \
-    --policy-document file://envoy-iam-policy.json
-```
-
-```
-eksctl create iamserviceaccount --cluster eks-argo-rollouts \
-  --namespace app \
-  --name app-envoy-proxies \
-  --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/DevEnvoyNamespaceIAMPolicy \
-  --override-existing-serviceaccounts \
-  --approve 
 ```
 
 ---

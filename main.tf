@@ -81,6 +81,54 @@ module "eks_blueprints_kubernetes_addons" {
   enable_appmesh_controller           = true
 }
 
+module "irsa_app-envoy-proxies" {
+
+  source                      = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/irsa?ref=v4.16.0"
+  kubernetes_namespace        = "app"
+  create_kubernetes_namespace = false
+  kubernetes_service_account  = "app-envoy-proxies"
+  irsa_iam_policies           = [aws_iam_policy.appmesh_envoy.arn]
+  eks_cluster_id              = module.eks_blueprints.eks_cluster_id
+  eks_oidc_provider_arn       = module.eks_blueprints.eks_oidc_provider_arn
+
+  depends_on = [module.eks_blueprints_kubernetes_addons]
+}
+
+resource "aws_iam_policy" "appmesh_envoy" {
+  name_prefix = "appmesh-envoy"
+  policy      = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Effect": "Allow",
+          "Action": [
+              "appmesh:StreamAggregatedResources",
+              "appmesh:*",
+              "xray:*"
+          ],
+          "Resource": "*"
+      },
+      {
+          "Effect": "Allow",
+          "Action": [
+              "acm:ExportCertificate",
+              "acm-pca:GetCertificateAuthorityCertificate"
+          ],
+          "Resource": "*"
+      },
+      {
+        "Action": [
+          "logs:*"
+        ],
+        "Effect": "Allow",
+        "Resource": "*"
+      }
+  ]
+}
+  POLICY
+}
+
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 3.0"
