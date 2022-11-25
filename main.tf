@@ -51,7 +51,7 @@ module "eks_blueprints" {
 }
 
 module "eks_blueprints_kubernetes_addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.6.2"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.16.0"
 
   eks_cluster_id       = module.eks_blueprints.eks_cluster_id
   eks_cluster_endpoint = module.eks_blueprints.eks_cluster_endpoint
@@ -78,6 +78,7 @@ module "eks_blueprints_kubernetes_addons" {
   enable_yunikorn                     = false
   enable_argo_rollouts                = true
   enable_grafana                      = true
+  enable_appmesh_controller           = true
 }
 
 module "vpc" {
