@@ -36,18 +36,18 @@ spec:
               name: my-vn-stable
       analysis:
         templates:
-        - templateName: canary-success-rate
+          - templateName: canary-success-rate
         startingStep: 2
         args:
-        - name: app
-          value: demo-app-canary
-        - name: canary-hash
-          valueFrom:
-            podTemplateHashValue: Latest
+          - name: app
+            value: demo-app-canary
+          - name: canary-hash
+            valueFrom:
+              podTemplateHashValue: Latest
       steps:
-      - setWeight: 25
-      - pause: {duration: 1m}
-      - setWeight: 50
-      - pause: {duration: 1m}
-      - setWeight: 75
-      - pause: {duration: 2m}
+        - setWeight: 25
+        - pause: {duration: 1m}
+        - setWeight: 50
+        - pause: {duration: 1m}
+        - setWeight: 75
+        - pause: {duration: 2m}
