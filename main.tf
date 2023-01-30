@@ -85,7 +85,7 @@ module "irsa_app-envoy-proxies" {
 
   source                      = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/irsa?ref=v4.16.0"
   kubernetes_namespace        = "app"
-  create_kubernetes_namespace = false
+  create_kubernetes_namespace = true
   kubernetes_service_account  = "app-envoy-proxies"
   irsa_iam_policies           = [aws_iam_policy.appmesh_envoy.arn]
   eks_cluster_id              = module.eks_blueprints.eks_cluster_id
