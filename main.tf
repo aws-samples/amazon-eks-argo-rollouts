@@ -25,17 +25,19 @@ data "aws_availability_zones" "available" {}
 locals {
   name         = basename(path.cwd)
   cluster_name = coalesce(var.cluster_name, local.name)
-  region       = "ap-southeast-1"
+  region       = "eu-west-1"
+
+  mesh_name = "my-app-mesh"
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 }
 
 module "eks_blueprints" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.6.2"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.17.0"
 
   cluster_name    = local.cluster_name
-  cluster_version = "1.22"
+  cluster_version = "1.23"
 
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnets
@@ -51,7 +53,9 @@ module "eks_blueprints" {
 }
 
 module "eks_blueprints_kubernetes_addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.16.0"
+  #source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.17.0"
+  source = "github.com/allamand/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=appmesh-prometheus"
+  #source = "/home/ubuntu/environment/eks/terraform/terraform-aws-eks-blueprints/modules/kubernetes-addons"
 
   eks_cluster_id       = module.eks_blueprints.eks_cluster_id
   eks_cluster_endpoint = module.eks_blueprints.eks_cluster_endpoint
@@ -59,9 +63,10 @@ module "eks_blueprints_kubernetes_addons" {
   eks_cluster_version  = module.eks_blueprints.eks_cluster_version
 
   # EKS Managed Add-ons
-  enable_amazon_eks_vpc_cni    = true
-  enable_amazon_eks_coredns    = true
-  enable_amazon_eks_kube_proxy = true
+  enable_amazon_eks_vpc_cni            = true
+  enable_amazon_eks_coredns            = true
+  enable_amazon_eks_kube_proxy         = true
+  enable_amazon_eks_aws_ebs_csi_driver = true
 
   # Add-ons
   enable_aws_load_balancer_controller = false
@@ -70,20 +75,22 @@ module "eks_blueprints_kubernetes_addons" {
   enable_cert_manager                 = false
   enable_cluster_autoscaler           = false
   enable_ingress_nginx                = false
-  enable_keda                         = false
-  enable_metrics_server               = false
-  enable_prometheus                   = true
-  enable_traefik                      = false
-  enable_vpa                          = false
-  enable_yunikorn                     = false
-  enable_argo_rollouts                = true
-  enable_grafana                      = true
-  enable_appmesh_controller           = true
+
+  enable_keda               = false
+  enable_metrics_server     = true
+  enable_prometheus         = true
+  enable_traefik            = false
+  enable_vpa                = false
+  enable_yunikorn           = false
+  enable_argo_rollouts      = true
+  enable_grafana            = true
+  enable_appmesh_controller = true
+  enable_appmesh_prometheus = true
 }
 
-module "irsa_app-envoy-proxies" {
-
-  source                      = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/irsa?ref=v4.16.0"
+#The namespace need to exist to create IRSA service accounts
+module "irsa_app_envoy_proxies" {
+  source                      = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/irsa?ref=v4.17.0"
   kubernetes_namespace        = "app"
   create_kubernetes_namespace = true
   kubernetes_service_account  = "app-envoy-proxies"
@@ -129,6 +136,7 @@ resource "aws_iam_policy" "appmesh_envoy" {
   POLICY
 }
 
+
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 3.0"
@@ -166,8 +174,23 @@ module "vpc" {
 # ECR Resources
 #---------------------------------------------------------------
 
-resource "aws_ecr_repository" "demo-app" {
+resource "aws_ecr_repository" "demo_app" {
   name                 = "demo-app"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
+}
+
+resource "kubernetes_namespace_v1" "app" {
+  metadata {
+    name = "app"
+    labels = {
+      mesh                                     = local.mesh_name
+      gateway                                  = "ingress-gw"
+      "appmesh.k8s.aws/sidecarInjectorWebhook" = "enabled"
+    }
+  }
+
+  timeouts {
+    delete = "15m"
+  }
 }
