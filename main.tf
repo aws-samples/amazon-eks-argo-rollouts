@@ -25,9 +25,20 @@ data "aws_availability_zones" "available" {}
 locals {
   name         = basename(path.cwd)
   cluster_name = coalesce(var.cluster_name, local.name)
-  region       = "eu-west-1"
+  region       = "eu-west-3"
 
   mesh_name = "my-app-mesh"
+
+  #---------------------------------------------------------------
+  # ARGOCD ADD-ON APPLICATION
+  #---------------------------------------------------------------
+
+  addon_application = {
+    path                = "chart"
+    repo_url            = "git@github.com:allamand/eks-blueprints-add-ons.git"
+    ssh_key_secret_name = "github-blueprint-ssh-key"
+    add_on_application  = true
+  }
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -52,6 +63,14 @@ module "eks_blueprints" {
   }
 }
 
+resource "aws_secretsmanager_secret" "argocd" {
+  name = "argocd-admin-secret.${local.name}"
+}
+
+data "aws_secretsmanager_secret_version" "admin_password_version" {
+  secret_id = aws_secretsmanager_secret.argocd.id
+}
+
 module "eks_blueprints_kubernetes_addons" {
   #source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.17.0"
   source = "github.com/allamand/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=appmesh-prometheus"
@@ -62,6 +81,33 @@ module "eks_blueprints_kubernetes_addons" {
   eks_oidc_provider    = module.eks_blueprints.oidc_provider
   eks_cluster_version  = module.eks_blueprints.eks_cluster_version
 
+  #---------------------------------------------------------------
+  # ARGO CD ADD-ON
+  #---------------------------------------------------------------
+
+  enable_argocd         = true
+  argocd_manage_add_ons = true # Indicates that ArgoCD is responsible for managing/deploying Add-ons.
+
+  argocd_applications = {
+    addons    = local.addon_application
+  }
+
+  # This example shows how to set default ArgoCD Admin Password using SecretsManager with Helm Chart set_sensitive values.
+  argocd_helm_config = {
+    set_sensitive = [
+      {
+        name  = "configs.secret.argocdServerAdminPassword"
+        value = bcrypt(data.aws_secretsmanager_secret_version.admin_password_version.secret_string)
+      }
+    ]
+    set = [
+      {
+        name  = "server.service.type"
+        value = "LoadBalancer"
+      }
+    ]
+  }
+
   # EKS Managed Add-ons
   enable_amazon_eks_vpc_cni            = true
   enable_amazon_eks_coredns            = true
@@ -69,36 +115,39 @@ module "eks_blueprints_kubernetes_addons" {
   enable_amazon_eks_aws_ebs_csi_driver = true
 
   # Add-ons
-  enable_aws_load_balancer_controller = false
-  enable_aws_cloudwatch_metrics       = false
-  enable_aws_for_fluentbit            = false
-  enable_cert_manager                 = false
-  enable_cluster_autoscaler           = false
-  enable_ingress_nginx                = false
-
-  enable_keda               = false
   enable_metrics_server     = true
   enable_prometheus         = true
-  enable_traefik            = false
-  enable_vpa                = false
-  enable_yunikorn           = false
+
   enable_argo_rollouts      = true
   enable_grafana            = true
   enable_appmesh_controller = true
   enable_appmesh_prometheus = true
 }
 
+resource "kubernetes_namespace_v1" "app" {
+  metadata {
+    name = "app"
+    labels = {
+      mesh                                     = local.mesh_name
+      gateway                                  = "ingress-gw"
+      "appmesh.k8s.aws/sidecarInjectorWebhook" = "enabled"
+    }
+  }
+
+  timeouts {
+    delete = "15m"
+  }
+}
+
 #The namespace need to exist to create IRSA service accounts
 module "irsa_app_envoy_proxies" {
   source                      = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/irsa?ref=v4.17.0"
-  kubernetes_namespace        = "app"
-  create_kubernetes_namespace = true
+  kubernetes_namespace        = try(kubernetes_namespace_v1.app.metadata[0].name, "app")
+  create_kubernetes_namespace = false
   kubernetes_service_account  = "app-envoy-proxies"
   irsa_iam_policies           = [aws_iam_policy.appmesh_envoy.arn]
   eks_cluster_id              = module.eks_blueprints.eks_cluster_id
   eks_oidc_provider_arn       = module.eks_blueprints.eks_oidc_provider_arn
-
-  depends_on = [module.eks_blueprints_kubernetes_addons]
 }
 
 resource "aws_iam_policy" "appmesh_envoy" {
@@ -180,17 +229,3 @@ resource "aws_ecr_repository" "demo_app" {
   force_delete         = true
 }
 
-resource "kubernetes_namespace_v1" "app" {
-  metadata {
-    name = "app"
-    labels = {
-      mesh                                     = local.mesh_name
-      gateway                                  = "ingress-gw"
-      "appmesh.k8s.aws/sidecarInjectorWebhook" = "enabled"
-    }
-  }
-
-  timeouts {
-    delete = "15m"
-  }
-}

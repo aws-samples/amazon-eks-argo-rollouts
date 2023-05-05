@@ -10,8 +10,11 @@ spec:
   metrics:
     - name: success-rate
       interval: 20s
+      #interval: 5m
       successCondition: result[0] >= 0.90 || len(result) == 0 # isNaN(result) cannot use []float64 as argument (type float64) to call isNaN
+      failureCondition: result[0] <= 0.80
       failureLimit: 1
+      count: 5
       provider:
         prometheus:
           address: http://appmesh-prometheus.appmesh-system:9090
@@ -19,3 +22,4 @@ spec:
             sum(irate(envoy_http_downstream_rq_xx{app="{{args.app}}",envoy_response_code_class!~"5",rollouts_pod_template_hash="{{args.canary-hash}}",envoy_http_conn_manager_prefix="ingress"}[1m])) /
             sum(irate(envoy_http_downstream_rq_xx{app="{{args.app}}",rollouts_pod_template_hash="{{args.canary-hash}}",envoy_http_conn_manager_prefix="ingress"}[1m]))
 ---
+

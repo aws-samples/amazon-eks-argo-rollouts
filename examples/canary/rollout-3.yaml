@@ -1,0 +1,110 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: my-vn-canary-v3
+  namespace: app
+spec:
+  podSelector:
+    matchLabels:
+      app: demo-app-canary
+      rollouts-pod-template-hash: canary-tbd
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: my-svc-canary-v3.app.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: my-canary-vrouter
+  namespace: app
+spec:
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  routes:
+    - name: primary
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: my-vn-canary-v3
+              weight: 0
+            - virtualNodeRef:
+                name: my-vn-stable
+              weight: 100
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-svc-canary-v3
+  namespace: app
+spec:
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    # This selector will be updated with the pod-template-hash of the canary ReplicaSet.
+    app: demo-app-canary
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: demo-app-canary
+  namespace: app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: demo-app-canary
+  template:
+    metadata:
+      labels:
+        app: demo-app-canary
+    spec:
+      containers:
+        - name: demo-app
+          image: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/demo-app:v3.0.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+      serviceAccountName: app-envoy-proxies
+  strategy:
+    canary:
+      canaryService: my-svc-canary-v3
+      stableService: my-svc-stable
+      trafficRouting:
+        appMesh:
+          virtualService:
+            name: my-canary-vsvc
+          virtualNodeGroup:
+            canaryVirtualNodeRef:
+              name: my-vn-canary-v3
+            stableVirtualNodeRef:
+              name: my-vn-stable
+      analysis:
+        templates:
+          - templateName: canary-success-rate
+        startingStep: 2
+        args:
+          - name: app
+            value: demo-app-canary
+          - name: canary-hash
+            valueFrom:
+              podTemplateHashValue: Latest
+      steps:
+        - setWeight: 25
+        - pause: {duration: 2m}
+        - setWeight: 50
+        - pause: {duration: 2m}
+        - setWeight: 75
+        - pause: {duration: 2m}
