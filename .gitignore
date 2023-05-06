@@ -10,3 +10,6 @@ kubernetes-extras
 venv
 
 *.log
+.envrc
+kube-config.yaml
+app/v3
